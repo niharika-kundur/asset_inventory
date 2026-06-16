@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h2>Asset History</h2>
+    <a href="{% url 'asset_list' %}" class="btn btn-secondary btn-sm">← Back to Assets</a>
+</div>
+
+<!-- Asset Details Card -->
+<div class="card mt-3 mb-4">
+    <div class="card-header bg-dark text-white">
+        <strong>Asset Details</strong>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Asset ID:</strong> {{ asset.asset_id }}</p>
+                <p><strong>Asset Name:</strong> {{ asset.asset_name }}</p>
+                <p><strong>Asset Type:</strong> {{ asset.asset_type }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Currently Assigned To:</strong> {{ asset.assigned_to }}</p>
+                <p><strong>Current Status:</strong>
+                    {% if asset.status == 'Available' %}
+                    <span class="badge bg-success">{{ asset.status }}</span>
+                    {% elif asset.status == 'In Use' %}
+                    <span class="badge bg-primary">{{ asset.status }}</span>
+                    {% elif asset.status == 'Under Repair' %}
+                    <span class="badge bg-danger">{{ asset.status }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ asset.status }}</span>
+                    {% endif %}
+                </p>
+                <p><strong>Assigned Date:</strong> {{ asset.assigned_date|date:"Y-m-d" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Timeline -->
+<h4>Change History</h4>
+{% if history %}
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Date & Time</th>
+                <th>Changed By</th>
+                <th>Change Type</th>
+                <th>Field</th>
+                <th>Old Value</th>
+                <th>New Value</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in history %}
+            <tr>
+                <td>{{ record.changed_at|date:"Y-m-d H:i:s" }}</td>
+                <td>{{ record.changed_by }}</td>
+                <td>
+                    {% if record.change_type == 'Created' %}
+                    <span class="badge bg-success">{{ record.change_type }}</span>
+                    {% elif record.change_type == 'Transferred' %}
+                    <span class="badge bg-warning text-dark">{{ record.change_type }}</span>
+                    {% elif record.change_type == 'Updated' %}
+                    <span class="badge bg-info">{{ record.change_type }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ record.change_type }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ record.field_changed|default:"-" }}</td>
+                <td>{{ record.old_value|default:"-" }}</td>
+                <td>{{ record.new_value|default:"-" }}</td>
+                <td>{{ record.notes|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="text-muted">Total Records: {{ history|length }}</p>
+{% else %}
+<div class="alert alert-info">
+    No history records found for this asset.
+</div>
+{% endif %}
+
+{% endblock %}
+

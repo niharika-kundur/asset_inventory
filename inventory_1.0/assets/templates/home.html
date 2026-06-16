@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center mt-4">
+    <h1>Welcome to the Asset Inventory Tool</h1>
+    <p class="lead mt-3">
+        An application to track and manage team assets.
+    </p>
+    <p>
+        This tool helps keep track of laptops, monitors, and other
+        equipment assigned to team members.
+    </p>
+    <div class="mt-4">
+        <a href="{% url 'asset_list' %}" class="btn btn-primary me-2">View Assets</a>
+        <a href="{% url 'add_asset' %}" class="btn btn-success">Add Asset</a>
+    </div>
+</div>
+{% endblock %}

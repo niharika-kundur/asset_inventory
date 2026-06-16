@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Add New Asset</h2>
+
+<form method="POST" class="mt-3" style="max-width: 500px;">
+    {% csrf_token %}
+        {% if error_message %}
+    <div class="alert alert-warning">{{ error_message }}</div>
+    {% endif %}
+
+    <div class="mb-3">
+        <label class="form-label">Asset ID</label>
+        <input type="text" name="asset_id" class="form-control" placeholder="e.g. AST-001" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Asset Name</label>
+        <input type="text" name="asset_name" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Asset Type</label>
+        <select name="asset_type" class="form-select" required>
+            <option value="">-- Select --</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Monitor">Monitor</option>
+            <option value="CPU">CPU</option>
+            <option value="Keyboard">Keyboard</option>
+            <option value="Mouse">Mouse</option>
+            <option value="Headset">Headset</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Assigned To</label>
+        {% if user.is_superuser %}
+        <select name="assigned_to" class="form-select" required>
+            {% for u in users %}
+            <option value="{{ u.username }}">{{ u.username }}</option>
+            {% endfor %}
+        </select>
+        {% else %}
+        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+        {% endif %}
+    </div>
+
+
+    <div class="mb-3">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select" required>
+            <option value="Available">Available</option>
+            <option value="In Use">In Use</option>
+            <option value="Under Repair">Under Repair</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Asset</button>
+    <a href="{% url 'asset_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+{% endblock %}

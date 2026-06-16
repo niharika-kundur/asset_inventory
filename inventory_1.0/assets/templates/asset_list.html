@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Asset List</h2>
+    <a href="{% url 'export_assets' %}" class="btn btn-success btn-sm">📥 Export to CSV</a>
+</div>
+
+<!-- All Filters in One Row -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="GET" class="row g-2 align-items-end">
+            <!-- Search -->
+            <div class="col-auto">
+                <label class="form-label small mb-1">Search:</label>
+                <input type="text" name="search" class="form-control form-control-sm"
+                       placeholder="Asset ID..." value="{{ search_query }}" style="width: 130px;">
+            </div>
+
+            <!-- Date Filter Type -->
+            <div class="col-auto">
+                <label class="form-label small mb-1">Date Filter:</label>
+                <select name="date_filter" class="form-select form-select-sm" onchange="toggleDateFields(this.value)" style="width: 140px;">
+                    <option value="">No Filter</option>
+                    <option value="on" {% if date_filter_type == 'on' %}selected{% endif %}>Assigned On</option>
+                    <option value="between" {% if date_filter_type == 'between' %}selected{% endif %}>Between</option>
+                </select>
+            </div>
+
+            <!-- Date Fields (conditionally shown) -->
+            <div class="col-auto" id="dateOnField" style="{% if date_filter_type != 'on' %}display:none;{% endif %}">
+                <label class="form-label small mb-1">Date:</label>
+                <input type="date" name="assigned_on" class="form-control form-control-sm" value="{{ assigned_on }}">
+            </div>
+            <div class="col-auto" id="dateFromField" style="{% if date_filter_type != 'between' %}display:none;{% endif %}">
+                <label class="form-label small mb-1">From:</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-auto" id="dateToField" style="{% if date_filter_type != 'between' %}display:none;{% endif %}">
+                <label class="form-label small mb-1">To:</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">🔍 Apply</button>
+            </div>
+            {% if search_query or date_filter_type %}
+            <div class="col-auto">
+                <a href="{% url 'asset_list' %}" class="btn btn-outline-secondary btn-sm">✕ Clear All</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleDateFields(value) {
+    document.getElementById('dateOnField').style.display = value === 'on' ? 'block' : 'none';
+    document.getElementById('dateFromField').style.display = value === 'between' ? 'block' : 'none';
+    document.getElementById('dateToField').style.display = value === 'between' ? 'block' : 'none';
+}
+</script>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}success{% endif %} alert-dismissible fade show">
+    <strong>{% if message.tags == 'error' %}⚠️ Error:{% endif %}</strong> {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if assets %}
+<table class="table table-striped table-bordered mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>S.No</th>
+            <th>Asset ID</th>
+            <th>Asset Name</th>
+            <th>Asset Type</th>
+            <th>Assigned To</th>
+            <th>Assigned Date</th>
+            <th>
+                <form method="GET" class="d-flex align-items-center gap-2 m-0">
+                    <span>Status</span>
+                    <select name="status" class="form-select form-select-sm" style="width: auto; max-width: 90px;" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        {% for status in available_statuses %}
+                        <option value="{{ status }}" {% if status == selected_status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </th>
+            {% if user.is_superuser %}<th>Action</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for asset in assets %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ asset.asset_id }}</td>
+            <td>{{ asset.asset_name }}</td>
+            <td>{{ asset.asset_type }}</td>
+            <td>{{ asset.assigned_to }}</td>
+            <td>{{ asset.assigned_date|date:"Y-m-d" }}</td>
+            <td>
+                {% if asset.status == 'Available' %}
+                <span class="badge bg-success">{{ asset.status }}</span>
+                {% elif asset.status == 'In Use' %}
+                <span class="badge bg-primary">{{ asset.status }}</span>
+                {% elif asset.status == 'Under Repair' %}
+                <span class="badge bg-danger">{{ asset.status }}</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ asset.status }}</span>
+                {% endif %}
+            </td>
+            {% if user.is_superuser %}
+            <td>
+            <a href="{% url 'asset_history' asset.id %}" class="btn btn-info btn-sm" title="View History">📜</a>
+            <a href="{% url 'edit_asset' asset.id %}" class="btn btn-warning btn-sm">Transfer</a>
+            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ asset.id }}">Delete</button>
+
+            <!-- Delete Confirmation Modal -->
+            <div class="modal fade" id="deleteModal{{ asset.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirm Delete</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete <strong>{{ asset.asset_name }}</strong> ({{ asset.asset_id }})?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <a href="{% url 'delete_asset' asset.id %}" class="btn btn-danger">Delete</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p class="text-muted">Total Assets: {{ assets|length }}</p>
+{% else %}
+    {% if user.is_superuser %}
+    <p class="mt-3">No assets found. <a href="{% url 'add_asset' %}">Add one here.</a></p>
+    {% else %}
+    <div class="alert alert-info mt-3">
+        No assets are currently assigned to you.
+    </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
